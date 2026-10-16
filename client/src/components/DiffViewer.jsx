@@ -1,6 +1,8 @@
 // Requirement 6: text diff, highlighted screenshot diff, and side-by-side comparison of any two versions.
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { api } from '../api';
+import ScreenshotSlider from './ScreenshotSlider.jsx';
 
 const TINT = {
   add: 'bg-emerald-600/10 text-emerald-900',
@@ -92,24 +94,34 @@ function ShotDiff({ data }) {
   );
 }
 
-export default function DiffViewer({ watchId, from, to }) {
+export default function DiffViewer({ watchId, from, to, publicToken, onData, showSlider = true }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [tab, setTab] = useState('text');
 
   useEffect(() => {
     setData(null);
+    onData?.(null);
     setError('');
     if (!from || !to || from === to) return;
-    api.diff(watchId, from, to).then(setData).catch((e) => setError(e.message));
-  }, [watchId, from, to]);
+    (publicToken ? api.sharedDiff(publicToken, from, to) : api.diff(watchId, from, to))
+      .then((result) => {
+        setData(result);
+        onData?.(result);
+      })
+      .catch((e) => {
+        if (!e.status) toast.error(e.message, { id: e.message });
+        setError(e.message);
+      });
+  }, [watchId, from, to, publicToken, onData]);
 
   if (!from || !to) return <p className="text-muted">Pick two versions in the timeline to compare them. The first check only saves a baseline.</p>;
   if (from === to) return <p className="text-muted">Choose two different versions to compare.</p>;
   if (error) return <p className="text-bad">{error}</p>;
   if (!data) return <p className="text-muted">Loading comparison...</p>;
 
-  const tabs = [['text', 'Text diff'], ['side', 'Side by side'], ['shot', 'Screenshot diff']];
+  const hasScreenshots = Boolean(data.from.screenshot && data.to.screenshot);
+  const tabs = [['text', 'Text diff'], ['side', 'Side by side'], ...(showSlider && hasScreenshots ? [['slider', 'Compare']] : []), ...(data.screenshotDiff?.url ? [['shot', 'Overlay']] : [])];
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -126,6 +138,7 @@ export default function DiffViewer({ watchId, from, to }) {
       </div>
       {tab === 'text' && <TextDiff parts={data.parts} />}
       {tab === 'side' && <SideBySide data={data} />}
+      {showSlider && tab === 'slider' && hasScreenshots && <ScreenshotSlider beforeUrl={data.from.screenshot} afterUrl={data.to.screenshot} />}
       {tab === 'shot' && <ShotDiff data={data} />}
     </div>
   );

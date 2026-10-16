@@ -26,7 +26,7 @@ function alertText(a) {
   return REASONS[a.reason] || '';
 }
 
-export default function Timeline({ snapshots, from, to, onSelect }) {
+export default function Timeline({ snapshots, from, to, onSelect, readOnly = false }) {
   if (!snapshots.length) {
     return <p className="text-sm text-muted">No versions yet. The first one is saved after the first check.</p>;
   }
@@ -38,14 +38,14 @@ export default function Timeline({ snapshots, from, to, onSelect }) {
           <span className={`absolute -left-[25px] top-[22px] h-2 w-2 rounded-full ring-4 ring-[var(--surface)] ${DOT[s.alert?.status] || 'bg-[var(--accent-soft)]'}`} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
-              <time className="text-sm font-semibold" title={new Date(s.createdAt).toLocaleString()}>
+              <time className="text-[10px] uppercase tracking-[0.12em] text-[var(--ink-soft)]" title={new Date(s.createdAt).toLocaleString()}>
                 {new Date(s.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
               </time>
               <span className="shrink-0 text-xs text-muted">{timeAgo(s.createdAt)}</span>
             </div>
-            <p className="mt-0.5 line-clamp-2 text-sm text-muted">{s.summary}</p>
+            <p className={`mt-1 line-clamp-2 text-sm ${s.summary ? 'font-medium text-[var(--ink)]' : 'text-muted'}`}>{s.summary || 'Snapshot saved'}</p>
             {alertText(s.alert) && <p className="mt-0.5 text-xs text-muted">{alertText(s.alert)}</p>}
-            <div className="mt-2 flex gap-4 text-xs text-[var(--ink-soft)]">
+            {!readOnly && <div className="mt-2 flex gap-4 text-xs text-[var(--ink-soft)]">
               <label className="flex cursor-pointer items-center gap-1.5">
                 <input type="radio" name="from" className="accent-[var(--accent-soft)]" checked={from === s._id} onChange={() => onSelect({ from: s._id, to })} />
                 From
@@ -54,7 +54,7 @@ export default function Timeline({ snapshots, from, to, onSelect }) {
                 <input type="radio" name="to" className="accent-[var(--accent-soft)]" checked={to === s._id} onChange={() => onSelect({ from, to: s._id })} />
                 To
               </label>
-            </div>
+            </div>}
           </div>
         </li>
       ))}

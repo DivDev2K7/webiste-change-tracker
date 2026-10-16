@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { api, INTERVALS, intervalLabel, timeAgo } from '../api';
 import { StatusLabel } from '../components/Dashboard.jsx';
 import Timeline from '../components/Timeline.jsx';
 import DiffViewer from '../components/DiffViewer.jsx';
+import ScreenshotSlider from '../components/ScreenshotSlider.jsx';
 import VisualPicker from '../components/VisualPicker.jsx';
 
 function Settings({ watch, onSaved }) {
@@ -36,6 +39,7 @@ function Settings({ watch, onSaved }) {
         notify: { email: form.email, discordWebhook: form.discordWebhook, telegramChatId: form.telegramChatId, digest: form.digest }
       });
       setInfo('Saved.');
+      toast.success('Settings saved');
       onSaved();
     } catch (e) {
       setError(e.message);
@@ -48,6 +52,7 @@ function Settings({ watch, onSaved }) {
     try {
       const r = await api.testAlert({ email: form.email, discordWebhook: form.discordWebhook, telegramChatId: form.telegramChatId });
       setInfo(`Test alert sent via ${r.sent.join(', ')}.`);
+      toast.success(`Test alert sent via ${r.sent.join(', ')}.`);
     } catch (e) {
       setError(e.message);
     }
@@ -117,7 +122,7 @@ export default function WatchDetails() {
   const [params, setParams] = useSearchParams();
   const [watch, setWatch] = useState(null);
   const [snaps, setSnaps] = useState([]);
-  const [error, setError] = useState('');
+  const [diffData, setDiffData] = useState(null);
   const [tab, setTab] = useState('changes');
 
   const load = useCallback(() => {
@@ -125,9 +130,8 @@ export default function WatchDetails() {
       .then(([w, s]) => {
         setWatch(w);
         setSnaps(s);
-        setError('');
       })
-      .catch((e) => setError(e.message));
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -136,7 +140,6 @@ export default function WatchDetails() {
     return () => clearInterval(t);
   }, [load]);
 
-  if (error && !watch) return <p className="pt-20 text-rose-200">{error}</p>;
   if (!watch) return <p className="pt-20 text-[var(--on-canvas-soft)]">Loading...</p>;
 
   // default comparison: newest version vs the one before it (or whatever the alert link pointed to)
@@ -145,11 +148,45 @@ export default function WatchDetails() {
   const fromId = params.get('from') || (toIndex >= 0 ? snaps[toIndex + 1]?._id : undefined);
   const select = ({ from, to }) => setParams({ ...(from ? { from } : {}), ...(to ? { to } : {}) }, { replace: true });
 
-  const checkNow = () => api.checkWatch(id).then(() => setTimeout(load, 4000)).catch((e) => setError(e.message));
-  const toggleActive = () => api.updateWatch(id, { active: !watch.active }).then(load).catch((e) => setError(e.message));
+  const checkNow = () => api.checkWatch(id).then(() => {
+    toast.info('Check queued');
+    setTimeout(load, 4000);
+  }).catch(() => {});
+  const toggleActive = () => api.updateWatch(id, { active: !watch.active }).then(() => {
+    toast.success(watch.active ? 'Watch paused' : 'Watch resumed');
+    load();
+  }).catch(() => {});
   const remove = () => {
     if (!window.confirm(`Delete "${watch.name}" and all of its saved versions?`)) return;
-    api.deleteWatch(id).then(() => navigate('/')).catch((e) => setError(e.message));
+    api.deleteWatch(id).then(() => {
+      toast.success('Watch deleted');
+      navigate('/');
+    }).catch(() => {});
+  };
+
+  const copyLink = async (url) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success('Share link copied');
+    } catch {
+      toast.error('Could not copy the share link');
+    }
+  };
+
+  const share = async () => {
+    try {
+      const { token, url } = watch.shareToken
+        ? { token: watch.shareToken, url: `${window.location.origin}/share/${watch.shareToken}` }
+        : await api.createShare(id);
+      setWatch((current) => ({ ...current, shareToken: token }));
+      toast('Share link ready', {
+        description: url,
+        duration: 10000,
+        action: { label: 'Copy', onClick: () => copyLink(url) }
+      });
+    } catch {
+      // The API request already reports errors as a toast.
+    }
   };
 
   const firstSaved = snaps.length ? new Date(snaps[snaps.length - 1].createdAt).toLocaleDateString([], { dateStyle: 'medium' }) : '';
@@ -162,7 +199,10 @@ export default function WatchDetails() {
     <div className="space-y-8">
       <div className="space-y-2">
         <Link to="/" className="text-xs uppercase tracking-[0.15em] text-[var(--on-canvas-soft)] hover:text-[var(--accent)]">Dashboard / Watches</Link>
-        <h1 className="pt-2 text-4xl font-normal leading-tight tracking-[-0.045em] text-[var(--on-canvas)] md:text-5xl">{watch.name}</h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="pt-2 text-4xl font-normal leading-tight tracking-[-0.045em] text-[var(--on-canvas)] md:text-5xl">{watch.name}</h1>
+          {watch.shareToken && <span className="rounded-full border border-[var(--accent)]/20 bg-[var(--accent)]/10 px-3 py-1 text-[10px] uppercase tracking-[0.14em] text-[var(--accent)]">Shared</span>}
+        </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <StatusLabel status={watch.status} paused={!watch.active} />
           <a href={watch.url} target="_blank" rel="noreferrer" className="truncate text-sm text-[var(--on-canvas-soft)] hover:text-[var(--accent)]">{watch.url}</a>
@@ -182,11 +222,12 @@ export default function WatchDetails() {
           This page changed on every recent check, so alerts are paused. Ignore the parts that keep changing, or alert on bigger changes only.
         </p>
       )}
-      {error && <p className="text-sm text-rose-200">{error}</p>}
-
       <div className="flex flex-wrap items-center gap-3">
         <button onClick={checkNow} className="btn btn-primary">Check now</button>
         <button onClick={toggleActive} className="btn border border-white/15 bg-white/[0.04] text-[var(--on-canvas)] hover:bg-white/10">{watch.active ? 'Pause' : 'Resume'}</button>
+        <button onClick={share} className="btn border border-white/15 bg-white/[0.04] text-[var(--on-canvas)] hover:bg-white/10">
+          <Share2 size={17} strokeWidth={1.5} />{watch.shareToken ? 'Copy link' : 'Share'}
+        </button>
         <button onClick={remove} className="ml-auto text-xs uppercase tracking-[0.12em] text-[var(--on-canvas-soft)] hover:text-rose-200">Delete this page</button>
       </div>
 
@@ -208,9 +249,16 @@ export default function WatchDetails() {
       {tab === 'settings' ? (
         <Settings watch={watch} onSaved={load} />
       ) : (
+        <>
+        {diffData?.from?.screenshot && diffData?.to?.screenshot && (
+          <section className="space-y-3">
+            <p className="section-label">Before / after</p>
+            <ScreenshotSlider beforeUrl={diffData.from.screenshot} afterUrl={diffData.to.screenshot} />
+          </section>
+        )}
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_21rem]">
           <section>
-            <DiffViewer watchId={id} from={fromId} to={toId} />
+            <DiffViewer watchId={id} from={fromId} to={toId} onData={setDiffData} showSlider={false} />
           </section>
           <aside className="lg:border-l lg:border-line lg:pl-8">
             <div className="rounded-[24px] bg-black/[0.035] px-6 py-7 text-center">
@@ -223,6 +271,7 @@ export default function WatchDetails() {
             <Timeline snapshots={snaps} from={fromId} to={toId} onSelect={select} />
           </aside>
         </div>
+        </>
       )}
       </div>
     </div>

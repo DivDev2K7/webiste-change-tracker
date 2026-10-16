@@ -1,5 +1,6 @@
 import 'dotenv/config'; // must be first so env vars exist before other modules read them
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
@@ -7,6 +8,9 @@ import connectDB from './config/db.js';
 import watchRoutes from './routes/watchRoutes.js';
 import alertRoutes from './routes/alertRoutes.js';
 import demoRoutes, { DEMO_URL } from './routes/demoRoutes.js';
+import shareRoutes from './routes/shareRoutes.js';
+import { WebSocketServer } from 'ws';
+import { registerClient } from './services/broadcaster.js';
 import { authStatus, login, requireAuth } from './controllers/authController.js';
 import { asyncHandler, errorHandler, notFound } from './middlewares/errorHandler.js';
 import { startScheduler } from './services/scheduler.js';
@@ -27,6 +31,7 @@ app.post('/api/auth/login', asyncHandler(async (req, res) => login(req, res)));
 
 app.use('/screenshots', express.static(SHOT_DIR, { maxAge: '7d', immutable: true }));
 app.use('/demo', demoRoutes);
+app.use('/api/share', shareRoutes);
 app.use('/api/watches', requireAuth, watchRoutes);
 app.use('/api/alerts', requireAuth, alertRoutes);
 
@@ -36,9 +41,13 @@ app.use(errorHandler);
 async function main() {
   await connectDB();
   startScheduler();
-  const server = app.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));
+  const server = http.createServer(app);
+  const wss = new WebSocketServer({ server, path: '/ws' });
+  wss.on('connection', registerClient);
+  server.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));
 
   const shutdown = async () => {
+    wss.close();
     server.close();
     await closeBrowser();
     process.exit(0);

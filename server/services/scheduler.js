@@ -8,6 +8,8 @@ import Snapshot from '../models/Snapshot.js';
 import { fetchPage } from './scraper.js';
 import { buildText } from './noiseFilter.js';
 import { computeTextDiff, summarize } from './diffEngine.js';
+import { summarizeChange } from './summarizer.js';
+import { broadcast } from './broadcaster.js';
 import { sendChangeAlert, sendStatusAlert, sendDigest, hasChannels } from './notifier.js';
 import { sha256 } from '../utils/hash.js';
 
@@ -28,6 +30,23 @@ const SHOT_DIR = path.resolve(process.env.SCREENSHOT_DIR || './screenshots');
 
 // Sensitivity = minimum share of the text that must change before we alert (storage is unaffected).
 const THRESHOLD = { high: 0, medium: 0.005, low: 0.03 };
+
+function watchPayload(watch, latestSummary = watch.lastSummary) {
+  return {
+    _id: String(watch._id),
+    name: watch.name,
+    url: watch.url,
+    lastChecked: watch.lastChecked,
+    lastChanged: watch.lastChanged,
+    active: watch.active,
+    noisy: watch.noisy,
+    status: watch.status,
+    lastError: watch.lastError,
+    lastSummary: latestSummary,
+    latestSummary,
+    intervalMinutes: watch.intervalMinutes
+  };
+}
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const withTimeout = (promise, ms, label) =>
@@ -103,6 +122,7 @@ async function recordFailure(watch, result) {
     watch.consecutiveFailures >= FAILURE_ALERT_AFTER && !watch.failureAlerted && hasChannels(watch.notify);
   if (shouldAlert) watch.failureAlerted = true;
   await watch.save();
+  broadcast('watch:updated', watchPayload(watch));
 
   if (shouldAlert) {
     await sendStatusAlert(
@@ -154,6 +174,7 @@ export async function runCheck(watchId) {
     watch.rebaseline = false;
     scheduleNext(watch);
     await watch.save();
+    broadcast('watch:updated', watchPayload(watch));
     return;
   }
 
@@ -179,6 +200,7 @@ async function decideAlert(watch, snap, diff) {
 
 async function handleChange(watch, text, hash, screenshot) {
   const prev = await Snapshot.findOne({ watch: watch._id }).sort({ createdAt: -1 });
+  const shouldSummarize = Boolean(prev && !watch.rebaseline);
   const snap = new Snapshot({ watch: watch._id, hash, text });
 
   const rel = `${watch._id}/${snap._id}.png`;
@@ -195,8 +217,8 @@ async function handleChange(watch, text, hash, screenshot) {
     watch.rebaseline = false;
   } else {
     const diff = computeTextDiff(prev.text, text);
-    snap.summary = summarize(diff);
-    watch.lastSummary = snap.summary;
+    const fallbackSummary = summarize(diff);
+    watch.lastSummary = fallbackSummary;
     snap.stats = { added: diff.addedLines.length, removed: diff.removedLines.length, ratio: diff.ratio };
     watch.lastChanged = new Date();
     watch.consecutiveChanges += 1;
@@ -220,6 +242,20 @@ async function handleChange(watch, text, hash, screenshot) {
   // saved BEFORE sending so a crash can never cause a duplicate alert
   await snap.save();
   await watch.save();
+  broadcast('watch:updated', watchPayload(watch, snap.summary || watch.lastSummary));
+
+  if (shouldSummarize) {
+    summarizeChange(prev.text, text).then(async (summary) => {
+      if (!summary) return;
+      await Snapshot.updateOne({ _id: snap._id }, { $set: { summary } });
+      const latest = await Watch.findById(watch._id);
+      if (latest) {
+        latest.lastSummary = summary;
+        await latest.save();
+        broadcast('watch:updated', watchPayload(latest, summary));
+      }
+    }).catch((err) => console.error('[summary]', err.message));
+  }
 
   if (send) {
     try {
@@ -229,6 +265,7 @@ async function handleChange(watch, text, hash, screenshot) {
       console.error('[alert]', err.message);
       await Snapshot.updateOne({ _id: snap._id }, { 'alert.status': 'failed', 'alert.reason': err.message.slice(0, 200) });
     }
+
   }
   await pruneSnapshots(watch._id);
 }

@@ -1,20 +1,33 @@
+import { toast } from 'sonner';
+
 const TOKEN_KEY = 'wcd_token';
 export const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
 export const setToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
 
 async function request(path, { method = 'GET', body } = {}) {
   const token = getToken();
-  const res = await fetch(`/api${path}`, {
-    method,
-    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let res;
+  try {
+    res = await fetch(`/api${path}`, {
+      method,
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (error) {
+    toast.error(error.message || 'Network request failed', { id: error.message || 'network-error' });
+    throw error;
+  }
   const data = await res.json().catch(() => ({}));
   if (res.status === 401 && token) {
     setToken('');
     window.location.reload();
   }
-  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  if (!res.ok) {
+    const error = new Error(data.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    toast.error(error.message, { id: error.message });
+    throw error;
+  }
   return data;
 }
 
@@ -30,7 +43,11 @@ export const api = {
   checkWatch: (id) => request(`/watches/${id}/check`, { method: 'POST' }),
   snapshots: (id) => request(`/watches/${id}/snapshots`),
   diff: (id, from, to) => request(`/watches/${id}/diff?from=${from}&to=${to}`),
-  testAlert: (notify) => request('/alerts/test', { method: 'POST', body: notify })
+  testAlert: (notify) => request('/alerts/test', { method: 'POST', body: notify }),
+  createShare: (id) => request(`/watches/${id}/share`, { method: 'POST' }),
+  deleteShare: (id) => request(`/watches/${id}/share`, { method: 'DELETE' }),
+  getSharedWatch: (token) => request(`/share/${encodeURIComponent(token)}`),
+  sharedDiff: (token, from, to) => request(`/share/${encodeURIComponent(token)}/diff?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
 };
 
 // The picker iframe can't send headers, so the token travels in the query string.
