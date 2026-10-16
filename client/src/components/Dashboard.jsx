@@ -88,7 +88,7 @@ const FILTERS = [
   ['paused', 'Paused', (w) => !w.active]
 ];
 
-export default function Dashboard({ watches, onCheck, onDelete, onAdd }) {
+export default function Dashboard({ watches, onCheck, onDelete, onAdd, onTryDemo, demoBusy }) {
   const [filter, setFilter] = useState('all');
 
   if (!watches.length) {
@@ -96,9 +96,12 @@ export default function Dashboard({ watches, onCheck, onDelete, onAdd }) {
       <div className="py-16 text-center">
         <p className="text-lg font-medium">Nothing is being watched yet</p>
         <p className="mt-1 text-muted">Add a page and the first snapshot is saved within a minute.</p>
-        <button onClick={onAdd} className="btn btn-primary mt-5">
-          Add a page
-        </button>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <button onClick={onAdd} className="btn btn-primary">Add a page</button>
+          <button onClick={onTryDemo} disabled={demoBusy} className="btn btn-quiet">
+            {demoBusy ? 'Opening demo...' : 'Try the demo'}
+          </button>
+        </div>
       </div>
     );
   }
@@ -108,6 +111,11 @@ export default function Dashboard({ watches, onCheck, onDelete, onAdd }) {
 
   return (
     <div className="space-y-5">
+      <div className="flex justify-end">
+        <button onClick={onTryDemo} disabled={demoBusy} className="btn btn-quiet">
+          {demoBusy ? 'Opening demo...' : 'Try the demo'}
+        </button>
+      </div>
       <div className="flex flex-wrap gap-2">
         {FILTERS.map(([key, label, test]) => {
           const count = watches.filter(test).length;

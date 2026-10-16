@@ -6,6 +6,7 @@ import fs from 'fs';
 import connectDB from './config/db.js';
 import watchRoutes from './routes/watchRoutes.js';
 import alertRoutes from './routes/alertRoutes.js';
+import demoRoutes, { DEMO_URL } from './routes/demoRoutes.js';
 import { authStatus, login, requireAuth } from './controllers/authController.js';
 import { asyncHandler, errorHandler, notFound } from './middlewares/errorHandler.js';
 import { startScheduler } from './services/scheduler.js';
@@ -20,10 +21,12 @@ app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173' }));
 app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/api/config', (req, res) => res.json({ demoUrl: DEMO_URL }));
 app.get('/api/auth/status', authStatus);
 app.post('/api/auth/login', asyncHandler(async (req, res) => login(req, res)));
 
 app.use('/screenshots', express.static(SHOT_DIR, { maxAge: '7d', immutable: true }));
+app.use('/demo', demoRoutes);
 app.use('/api/watches', requireAuth, watchRoutes);
 app.use('/api/alerts', requireAuth, alertRoutes);
 

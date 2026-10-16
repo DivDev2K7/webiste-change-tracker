@@ -110,6 +110,12 @@ npm run dev
 
 Alerts need settings in `.env`: SMTP for email, `TELEGRAM_BOT_TOKEN` for Telegram. Discord only needs a webhook URL pasted into the watch form. Use **Send a test alert** in the form to check your setup.
 
+## Demo
+
+Choose **Try the demo** on the dashboard to open the sample product page and add it to your watches. Use the Admin toggle to edit the product name, price, description, and status; **Save** keeps changes in server memory until the backend restarts, and **Reset** restores the defaults. Set `DEMO_URL` in the server environment to change the URL used by the dashboard (defaults to `http://localhost:5000/demo`).
+
+For local monitoring of the demo, set `ALLOW_PRIVATE_URLS=true` in the server environment. Local URLs are blocked by default by the watcher's SSRF protection; only enable this for local testing.
+
 ## API
 
 | Method | Route | Purpose |
@@ -123,6 +129,8 @@ Alerts need settings in `.env`: SMTP for email, `TELEGRAM_BOT_TOKEN` for Telegra
 | GET | `/api/alerts` | Recent alert activity and why alerts were suppressed |
 | POST | `/api/alerts/test` | Send a test alert |
 | POST | `/api/alerts/digest` | Send the pending daily digest now |
+| GET | `/demo` | Public, editable demo product page |
+| GET | `/api/config` | Public client configuration, including the demo URL |
 
 ## Design decisions worth knowing
 

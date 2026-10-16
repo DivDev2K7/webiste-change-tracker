@@ -19,6 +19,7 @@ async function request(path, { method = 'GET', body } = {}) {
 }
 
 export const api = {
+  config: () => request('/config'),
   authStatus: () => request('/auth/status'),
   login: (password) => request('/auth/login', { method: 'POST', body: { password } }),
   listWatches: () => request('/watches'),
