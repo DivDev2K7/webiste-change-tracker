@@ -1,0 +1,63 @@
+# Runs MongoDB + the backend (with Chromium for Puppeteer).
+# Start the React client separately:  cd client && npm install && npm run dev
+#
+#   cp .env.example .env     (optional: only needed for SMTP / Telegram / login settings)
+#   docker compose up
+#
+# The first start installs Chromium and npm packages inside the container, so it takes a few minutes.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    image: node:20-bookworm-slim
+    working_dir: /app
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./server:/app
+      - server-node-modules:/app/node_modules # keeps Linux node_modules out of your project folder
+      - screenshots:/data/screenshots
+    command: >
+      sh -c "apt-get update &&
+             apt-get install -y --no-install-recommends chromium fonts-liberation ca-certificates &&
+             rm -rf /var/lib/apt/lists/* &&
+             npm install --omit=dev &&
+             node index.js"
+    environment:
+      PORT: 5000
+      MONGO_URI: mongodb://mongo:27017/website-change-detector
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      SCREENSHOT_DIR: /data/screenshots
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+      PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium
+      AUTH_PASSWORD: ${AUTH_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      QUEUE_CONCURRENCY: ${QUEUE_CONCURRENCY:-2}
+      MIN_DOMAIN_GAP_SECONDS: ${MIN_DOMAIN_GAP_SECONDS:-5}
+      PAGE_CACHE_TTL_SECONDS: ${PAGE_CACHE_TTL_SECONDS:-120}
+      DIGEST_CRON: ${DIGEST_CRON:-0 9 * * *}
+
+volumes:
+  mongo-data:
+  server-node-modules:
+  screenshots:
