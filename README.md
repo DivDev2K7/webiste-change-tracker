@@ -2,7 +2,7 @@
 
 A service that watches public web pages and alerts you to **meaningful** changes while ignoring noise (timestamps, counters, ads, rotating banners, random tokens).
 
-Built with **Node.js + Express + MongoDB + Puppeteer** (backend) and **React + Vite + Tailwind** (frontend). Inspired by [changedetection.io](https://github.com/dgtlmoon/changedetection.io) and [website-stalker](https://github.com/EdJoPaTo/website-stalker), but written from scratch in JavaScript.
+Built with **Node.js + Express + MongoDB + Puppeteer** (backend) and **React + Vite + Tailwind** (frontend). 
 
 ## How it works
 
