@@ -55,7 +55,8 @@ function Settings({ watch, onSaved }) {
 
   return (
     <div className="space-y-8">
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="form-section grid gap-4 md:grid-cols-3">
+        <h2 className="section-label md:col-span-3">Watch settings</h2>
         <div>
           <label className="label" htmlFor="s-int">Check</label>
           <select id="s-int" value={form.intervalMinutes} onChange={set('intervalMinutes')} className="input">
@@ -76,8 +77,8 @@ function Settings({ watch, onSaved }) {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-[17px] font-semibold">Send alerts to</h2>
+      <section className="form-section space-y-4">
+        <h2 className="section-label">Send alerts to</h2>
         <div className="grid gap-4 md:grid-cols-3">
           <input aria-label="Email" type="email" placeholder="Email address" value={form.email} onChange={set('email')} className="input" />
           <input aria-label="Discord webhook" placeholder="Discord webhook URL" value={form.discordWebhook} onChange={set('discordWebhook')} className="input" />
@@ -92,8 +93,8 @@ function Settings({ watch, onSaved }) {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-[17px] font-semibold">Regions</h2>
+      <section className="form-section space-y-4">
+        <h2 className="section-label">Regions</h2>
         <VisualPicker
           url={watch.url}
           selectors={form.selectors}
@@ -135,8 +136,8 @@ export default function WatchDetails() {
     return () => clearInterval(t);
   }, [load]);
 
-  if (error && !watch) return <p className="text-bad">{error}</p>;
-  if (!watch) return <p className="text-muted">Loading...</p>;
+  if (error && !watch) return <p className="pt-20 text-rose-200">{error}</p>;
+  if (!watch) return <p className="pt-20 text-[var(--on-canvas-soft)]">Loading...</p>;
 
   // default comparison: newest version vs the one before it (or whatever the alert link pointed to)
   const toId = params.get('to') || snaps[0]?._id;
@@ -158,38 +159,39 @@ export default function WatchDetails() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-2">
-        <Link to="/" className="link text-sm">Dashboard</Link>
-        <h1 className="text-[34px] font-semibold leading-tight tracking-tight">{watch.name}</h1>
+        <Link to="/" className="text-xs uppercase tracking-[0.15em] text-[var(--on-canvas-soft)] hover:text-[var(--accent)]">Dashboard / Watches</Link>
+        <h1 className="pt-2 text-4xl font-normal leading-tight tracking-[-0.045em] text-[var(--on-canvas)] md:text-5xl">{watch.name}</h1>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <StatusLabel status={watch.status} paused={!watch.active} />
-          <a href={watch.url} target="_blank" rel="noreferrer" className="truncate text-sm text-muted hover:text-brand">{watch.url}</a>
+          <a href={watch.url} target="_blank" rel="noreferrer" className="truncate text-sm text-[var(--on-canvas-soft)] hover:text-[var(--accent)]">{watch.url}</a>
         </div>
-        <p className="text-sm text-muted">
+        <p className="text-sm text-[var(--on-canvas-soft)]">
           {intervalLabel(watch.intervalMinutes)} &middot; Checked {timeAgo(watch.lastChecked).toLowerCase()} &middot; Changed {watch.lastChanged ? timeAgo(watch.lastChanged).toLowerCase() : 'never'}
         </p>
       </div>
 
       {watch.status !== 'ok' && watch.lastError && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="rounded-2xl border border-amber-200/10 bg-amber-950/20 px-5 py-4 text-sm text-amber-100">
           {watch.lastError}. This is shown as a status and is not counted as a content change.
         </p>
       )}
       {watch.noisy && (
-        <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <p className="rounded-2xl border border-amber-200/10 bg-amber-950/20 px-5 py-4 text-sm text-amber-100">
           This page changed on every recent check, so alerts are paused. Ignore the parts that keep changing, or alert on bigger changes only.
         </p>
       )}
-      {error && <p className="text-sm text-bad">{error}</p>}
+      {error && <p className="text-sm text-rose-200">{error}</p>}
 
       <div className="flex flex-wrap items-center gap-3">
         <button onClick={checkNow} className="btn btn-primary">Check now</button>
-        <button onClick={toggleActive} className="btn btn-quiet">{watch.active ? 'Pause' : 'Resume'}</button>
-        <button onClick={remove} className="ml-auto text-sm text-muted hover:text-bad">Delete this page</button>
+        <button onClick={toggleActive} className="btn border border-white/15 bg-white/[0.04] text-[var(--on-canvas)] hover:bg-white/10">{watch.active ? 'Pause' : 'Resume'}</button>
+        <button onClick={remove} className="ml-auto text-xs uppercase tracking-[0.12em] text-[var(--on-canvas-soft)] hover:text-rose-200">Delete this page</button>
       </div>
 
-      <div className="flex gap-9 border-b border-line">
+      <div className="card space-y-7 p-5 md:p-8">
+      <div className="flex gap-7 border-b border-line">
         {tabs.map(([key, title, sub]) => (
           <button
             key={key}
@@ -197,7 +199,7 @@ export default function WatchDetails() {
             aria-pressed={tab === key}
             className={`-mb-px border-b-2 pb-3 text-left ${tab === key ? 'border-brand' : 'border-transparent'}`}
           >
-            <div className={`text-[20px] font-semibold ${tab === key ? 'text-ink' : 'text-muted'}`}>{title}</div>
+            <div className={`text-[18px] font-medium tracking-[-0.02em] ${tab === key ? 'text-ink' : 'text-muted'}`}>{title}</div>
             <div className="text-sm text-muted">{sub}</div>
           </button>
         ))}
@@ -206,22 +208,23 @@ export default function WatchDetails() {
       {tab === 'settings' ? (
         <Settings watch={watch} onSaved={load} />
       ) : (
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_21rem]">
           <section>
             <DiffViewer watchId={id} from={fromId} to={toId} />
           </section>
-          <aside className="lg:border-l lg:border-line lg:pl-9">
-            <div className="rounded-2xl bg-wash px-6 py-7 text-center">
-              <div className="text-[56px] font-bold leading-none text-brand">{snaps.length}</div>
+          <aside className="lg:border-l lg:border-line lg:pl-8">
+            <div className="rounded-[24px] bg-black/[0.035] px-6 py-7 text-center">
+              <div className="text-[56px] font-medium leading-none tracking-[-0.05em] text-brand">{snaps.length}</div>
               <p className="mt-3 text-sm font-medium">
                 {snaps.length === 1 ? 'version' : 'versions'} saved{firstSaved ? ` since ${firstSaved}` : ''}
               </p>
             </div>
-            <h2 className="mb-1 mt-8 text-[22px] font-semibold">Timeline</h2>
+            <h2 className="mb-3 mt-8 text-[20px] font-medium tracking-[-0.025em]">Timeline</h2>
             <Timeline snapshots={snaps} from={fromId} to={toId} onSelect={select} />
           </aside>
         </div>
       )}
+      </div>
     </div>
   );
 }

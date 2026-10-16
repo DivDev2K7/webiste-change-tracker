@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react';
 import { api } from '../api';
 
 const TINT = {
-  add: 'bg-emerald-50 text-emerald-900',
-  remove: 'bg-rose-50 text-rose-900',
-  same: 'text-muted',
-  skip: 'text-slate-400 italic'
+  add: 'bg-emerald-600/10 text-emerald-900',
+  remove: 'bg-rose-600/10 text-rose-900',
+  same: 'text-[var(--ink-soft)]',
+  skip: 'text-[var(--ink-soft)] italic'
 };
 const MARK = { add: '+', remove: '-', same: ' ' };
 
@@ -18,7 +18,7 @@ function Skip({ count }) {
 
 function TextDiff({ parts }) {
   return (
-    <div className="overflow-x-auto rounded-xl bg-slate-50 p-4 font-mono text-[13px] leading-6">
+    <div className="overflow-x-auto rounded-2xl bg-black/[0.035] p-4 font-mono text-[13px] leading-6">
       {parts.map((p, i) =>
         p.type === 'skip' ? (
           <Skip key={i} count={p.count} />
@@ -38,7 +38,7 @@ function Column({ title, parts, hide }) {
   return (
     <div className="min-w-0">
       <h3 className="mb-2 text-sm font-semibold">{title}</h3>
-      <div className="overflow-x-auto rounded-xl bg-slate-50 p-4 font-mono text-[13px] leading-6">
+      <div className="overflow-x-auto rounded-2xl bg-black/[0.035] p-4 font-mono text-[13px] leading-6">
         {parts
           .filter((p) => p.type !== hide)
           .map((p, i) =>
@@ -120,7 +120,7 @@ export default function DiffViewer({ watchId, from, to }) {
             </button>
           ))}
         </div>
-        <span className="text-sm text-muted">
+        <span className="text-sm text-[var(--on-canvas-soft)]">
           {data.stats.added} added, {data.stats.removed} removed
         </span>
       </div>

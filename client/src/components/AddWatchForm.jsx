@@ -65,8 +65,9 @@ export default function AddWatchForm({ onCreated }) {
   };
 
   return (
-    <form onSubmit={submit} className="card space-y-7 p-6">
-      <section className="grid gap-4 md:grid-cols-2">
+    <form id="add-watch-form" onSubmit={submit} className="card scroll-mt-32 space-y-7 p-7 md:p-8">
+      <section className="form-section grid gap-5 md:grid-cols-2">
+        <h2 className="section-label md:col-span-2">Page details</h2>
         <div>
           <label className="label" htmlFor="url">Page URL</label>
           <input id="url" required type="url" placeholder="https://example.com/pricing" value={form.url} onChange={set('url')} className="input" />
@@ -97,8 +98,8 @@ export default function AddWatchForm({ onCreated }) {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-[17px] font-semibold">Send alerts to</h2>
+      <section className="form-section space-y-4">
+        <h2 className="section-label">Send alerts to</h2>
         <div className="grid gap-4 md:grid-cols-3">
           <input aria-label="Email" type="email" placeholder="Email address" value={form.email} onChange={set('email')} className="input" />
           <input aria-label="Discord webhook" placeholder="Discord webhook URL" value={form.discordWebhook} onChange={set('discordWebhook')} className="input" />
@@ -113,9 +114,9 @@ export default function AddWatchForm({ onCreated }) {
         </div>
       </section>
 
-      <section className="space-y-3">
+      <section className="form-section space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 className="text-[17px] font-semibold">Regions</h2>
+          <h2 className="section-label">Regions</h2>
           <button type="button" disabled={!urlLooksValid} onClick={() => setShowPicker((s) => !s)} className="btn btn-quiet">
             {showPicker ? 'Hide preview' : 'Choose on the page'}
           </button>
