@@ -2,9 +2,9 @@
 import { timeAgo } from '../api';
 
 const DOT = {
-  sent: 'bg-brand',
-  failed: 'bg-bad',
-  digest: 'bg-sky-400'
+  sent: 'bg-[var(--accent-soft)]',
+  failed: 'bg-rose-700',
+  digest: 'bg-amber-600'
 };
 
 const REASONS = {
@@ -32,10 +32,10 @@ export default function Timeline({ snapshots, from, to, onSelect }) {
   }
 
   return (
-    <ul className="divide-y divide-line">
+    <ul className="ml-1 border-l border-black/10 pl-5">
       {snapshots.map((s) => (
-        <li key={s._id} className="flex gap-3 py-3">
-          <span className={`mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full ${DOT[s.alert?.status] || 'bg-slate-300'}`} />
+        <li key={s._id} className="relative flex gap-3 border-b border-black/5 py-4 last:border-0">
+          <span className={`absolute -left-[25px] top-[22px] h-2 w-2 rounded-full ring-4 ring-[var(--surface)] ${DOT[s.alert?.status] || 'bg-[var(--accent-soft)]'}`} />
           <div className="min-w-0 flex-1">
             <div className="flex items-baseline justify-between gap-2">
               <time className="text-sm font-semibold" title={new Date(s.createdAt).toLocaleString()}>
@@ -45,13 +45,13 @@ export default function Timeline({ snapshots, from, to, onSelect }) {
             </div>
             <p className="mt-0.5 line-clamp-2 text-sm text-muted">{s.summary}</p>
             {alertText(s.alert) && <p className="mt-0.5 text-xs text-muted">{alertText(s.alert)}</p>}
-            <div className="mt-2 flex gap-4 text-xs text-muted">
+            <div className="mt-2 flex gap-4 text-xs text-[var(--ink-soft)]">
               <label className="flex cursor-pointer items-center gap-1.5">
-                <input type="radio" name="from" className="accent-brand" checked={from === s._id} onChange={() => onSelect({ from: s._id, to })} />
+                <input type="radio" name="from" className="accent-[var(--accent-soft)]" checked={from === s._id} onChange={() => onSelect({ from: s._id, to })} />
                 From
               </label>
               <label className="flex cursor-pointer items-center gap-1.5">
-                <input type="radio" name="to" className="accent-brand" checked={to === s._id} onChange={() => onSelect({ from, to: s._id })} />
+                <input type="radio" name="to" className="accent-[var(--accent-soft)]" checked={to === s._id} onChange={() => onSelect({ from, to: s._id })} />
                 To
               </label>
             </div>
