@@ -8,6 +8,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -37,6 +38,30 @@ export default function Home() {
     api.deleteWatch(w._id).then(load).catch((e) => setError(e.message));
   };
 
+  const onTryDemo = async () => {
+    const demoTab = window.open('about:blank', '_blank');
+    if (!demoTab) {
+      setError('Allow pop-ups to open the demo in a new tab.');
+      return;
+    }
+    demoTab.opener = null;
+    setDemoBusy(true);
+    setError('');
+    try {
+      const { demoUrl } = await api.config();
+      if (!demoUrl) throw new Error('The demo URL is not configured on the server.');
+      demoTab.location.href = demoUrl;
+      if (!watches.some((watch) => watch.url === demoUrl)) {
+        await api.createWatch({ name: 'Demo product page', url: demoUrl, intervalMinutes: 60 });
+        load();
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDemoBusy(false);
+    }
+  };
+
   return (
     <div className="space-y-7">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -59,7 +84,7 @@ export default function Home() {
       {loading ? (
         <p className="text-muted">Loading...</p>
       ) : (
-        <Dashboard watches={watches} onCheck={onCheck} onDelete={onDelete} onAdd={() => setAdding(true)} />
+        <Dashboard watches={watches} onCheck={onCheck} onDelete={onDelete} onAdd={() => setAdding(true)} onTryDemo={onTryDemo} demoBusy={demoBusy} />
       )}
     </div>
   );
