@@ -1,5 +1,6 @@
 // Requirement 1: users add a URL, a name and a check interval (15 min to 24 h).
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { api, INTERVALS } from '../api';
 import VisualPicker from './VisualPicker.jsx';
 
@@ -45,6 +46,7 @@ export default function AddWatchForm({ onCreated }) {
       });
       setForm(EMPTY);
       setShowPicker(false);
+      toast.success('Watch created');
       onCreated();
     } catch (err) {
       setError(err.message);
@@ -59,6 +61,7 @@ export default function AddWatchForm({ onCreated }) {
     try {
       const r = await api.testAlert({ email: form.email, discordWebhook: form.discordWebhook, telegramChatId: form.telegramChatId });
       setInfo(`Test alert sent via ${r.sent.join(', ')}.`);
+      toast.success(`Test alert sent via ${r.sent.join(', ')}.`);
     } catch (err) {
       setError(err.message);
     }

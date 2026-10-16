@@ -116,6 +116,10 @@ Choose **Try the demo** on the dashboard to open the sample product page and add
 
 For local monitoring of the demo, set `ALLOW_PRIVATE_URLS=true` in the server environment. Local URLs are blocked by default by the watcher's SSRF protection; only enable this for local testing.
 
+## Live summaries and sharing
+
+Set `OPENAI_API_KEY` to enable best-effort, one-sentence summaries for changed snapshots; summary failures do not delay checks. The dashboard uses a WebSocket for live watch updates. Use **Share** on a watch's details page to create a public, read-only `/share/:token` link; anyone with that link can see its recent snapshots and latest comparison.
+
 ## API
 
 | Method | Route | Purpose |
@@ -131,6 +135,9 @@ For local monitoring of the demo, set `ALLOW_PRIVATE_URLS=true` in the server en
 | POST | `/api/alerts/digest` | Send the pending daily digest now |
 | GET | `/demo` | Public, editable demo product page |
 | GET | `/api/config` | Public client configuration, including the demo URL |
+| POST / DELETE | `/api/watches/:id/share` | Create or revoke a public share link |
+| GET | `/api/share/:token` | Public watch details and recent snapshots |
+| GET | `/api/share/:token/diff?from=&to=` | Public diff for two snapshots in a shared watch |
 
 ## Design decisions worth knowing
 

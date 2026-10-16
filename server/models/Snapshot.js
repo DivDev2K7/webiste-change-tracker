@@ -7,7 +7,7 @@ const snapshotSchema = new mongoose.Schema(
     hash: { type: String, required: true },
     text: { type: String, default: '' }, // noise-filtered page text
     screenshot: { type: String, default: '' }, // path relative to SCREENSHOT_DIR
-    summary: { type: String, default: '' }, // one-line change summary
+    summary: { type: String, default: null }, // best-effort AI change summary
     stats: {
       added: { type: Number, default: 0 },
       removed: { type: Number, default: 0 },

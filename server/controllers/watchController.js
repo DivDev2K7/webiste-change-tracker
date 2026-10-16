@@ -9,9 +9,29 @@ import { validateSelector } from '../services/noiseFilter.js';
 import { computeTextDiff, toRenderableParts, screenshotDiff } from '../services/diffEngine.js';
 import { enqueueCheck } from '../services/scheduler.js';
 import { DISCORD_PREFIXES } from '../services/notifier.js';
+import { nanoid } from 'nanoid';
+import { broadcast } from '../services/broadcaster.js';
 
 const SHOT_DIR = path.resolve(process.env.SCREENSHOT_DIR || './screenshots');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function watchPayload(watch) {
+  return {
+    _id: String(watch._id),
+    name: watch.name,
+    url: watch.url,
+    lastChecked: watch.lastChecked,
+    lastChanged: watch.lastChanged,
+    active: watch.active,
+    noisy: watch.noisy,
+    status: watch.status,
+    lastError: watch.lastError,
+    lastSummary: watch.lastSummary,
+    latestSummary: watch.lastSummary,
+    intervalMinutes: watch.intervalMinutes,
+    createdAt: watch.createdAt
+  };
+}
 
 /* ------------------------------ input validation ------------------------------ */
 
@@ -76,6 +96,7 @@ export async function createWatch(req, res) {
   if (!data.name) data.name = new URL(data.url).hostname;
   const watch = await Watch.create(data);
   enqueueCheck(watch._id); // take the baseline snapshot right away
+  broadcast('watch:created', watchPayload(watch));
   res.status(201).json(watch);
 }
 
@@ -102,6 +123,7 @@ export async function updateWatch(req, res) {
   }
   await watch.save();
   if (changed) enqueueCheck(watch._id);
+  broadcast('watch:updated', watchPayload(watch));
   res.json(watch);
 }
 
@@ -111,7 +133,37 @@ export async function deleteWatch(req, res) {
   await Snapshot.deleteMany({ watch: watch._id });
   await fs.rm(path.join(SHOT_DIR, String(watch._id)), { recursive: true, force: true });
   await watch.deleteOne();
+  broadcast('watch:deleted', { _id: String(watch._id) });
   res.json({ ok: true });
+}
+
+export async function createShareLink(req, res) {
+  const watch = await Watch.findById(req.params.id);
+  if (!watch) throw new HttpError(404, 'Watch not found');
+  if (!watch.shareToken) {
+    watch.shareToken = nanoid(24);
+    await watch.save();
+  }
+  const baseUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
+  res.json({ token: watch.shareToken, url: `${baseUrl}/share/${watch.shareToken}` });
+}
+
+export async function deleteShareLink(req, res) {
+  const watch = await Watch.findById(req.params.id);
+  if (!watch) throw new HttpError(404, 'Watch not found');
+  watch.shareToken = null;
+  await watch.save();
+  res.json({ ok: true });
+}
+
+export async function getSharedWatch(req, res) {
+  const watch = await Watch.findOne({ shareToken: req.params.token }).select('-notify -shareToken');
+  if (!watch) throw new HttpError(404, 'Shared watch not found');
+  const snapshots = await Snapshot.find({ watch: watch._id })
+    .select('-text')
+    .sort({ createdAt: -1 })
+    .limit(20);
+  res.json({ watch, snapshots });
 }
 
 export async function checkNow(req, res) {
@@ -140,6 +192,22 @@ export async function getDiff(req, res) {
   ]);
   if (!a || !b) throw new HttpError(404, 'Snapshot not found');
 
+  res.json(await createDiffPayload(a, b));
+}
+
+export async function getSharedDiff(req, res) {
+  const watch = await Watch.findOne({ shareToken: req.params.token }).select('_id');
+  if (!watch) throw new HttpError(404, 'Shared watch not found');
+  const { from, to } = req.query;
+  const [a, b] = await Promise.all([
+    Snapshot.findOne({ _id: from, watch: watch._id }),
+    Snapshot.findOne({ _id: to, watch: watch._id })
+  ]);
+  if (!a || !b) throw new HttpError(404, 'Snapshot not found');
+  res.json(await createDiffPayload(a, b));
+}
+
+async function createDiffPayload(a, b) {
   const diff = computeTextDiff(a.text, b.text);
   const payload = {
     from: { id: a._id, createdAt: a.createdAt, screenshot: a.screenshot && `/screenshots/${a.screenshot}` },
@@ -161,7 +229,7 @@ export async function getDiff(req, res) {
       console.error('[screenshot diff]', err.message);
     }
   }
-  res.json(payload);
+  return payload;
 }
 
 /* ------------------------------ visual picker ------------------------------ */

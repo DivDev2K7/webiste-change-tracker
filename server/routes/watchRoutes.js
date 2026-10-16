@@ -15,6 +15,8 @@ router.get('/preview', asyncHandler(c.previewPage)); // must come before /:id
 router.route('/').get(asyncHandler(c.listWatches)).post(asyncHandler(c.createWatch));
 router.route('/:id').get(asyncHandler(c.getWatch)).put(asyncHandler(c.updateWatch)).delete(asyncHandler(c.deleteWatch));
 router.post('/:id/check', asyncHandler(c.checkNow));
+router.post('/:id/share', asyncHandler(c.createShareLink));
+router.delete('/:id/share', asyncHandler(c.deleteShareLink));
 router.get('/:id/snapshots', asyncHandler(c.getSnapshots));
 router.get('/:id/diff', asyncHandler(c.getDiff));
 

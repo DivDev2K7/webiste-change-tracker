@@ -43,12 +43,15 @@ function WatchCard({ w, onCheck, onDelete }) {
   return (
     <article className="card group flex min-w-0 flex-col p-6 transition duration-300 ease-out hover:-translate-y-1 hover:bg-[var(--surface-strong)] hover:shadow-[0_32px_70px_-18px_rgba(0,0,0,.45)] md:p-7">
       <div className="flex min-w-0 items-start justify-between gap-3">
-        <Link to={`/watch/${w._id}`} title={w.url} className="min-w-0 truncate text-[18px] font-medium leading-snug tracking-[-0.025em] text-[var(--ink)] hover:text-[var(--accent-soft)]">{w.url}</Link>
+        <div className="min-w-0">
+          <Link to={`/watch/${w._id}`} title={w.url} className="block truncate text-[18px] font-medium leading-snug tracking-[-0.025em] text-[var(--ink)] hover:text-[var(--accent-soft)]">{w.url}</Link>
+          {w.lastSummary && <p className="mt-1 line-clamp-1 text-xs text-[var(--ink-soft)]" title={w.lastSummary}>{w.lastSummary}</p>}
+        </div>
         <span className={`shrink-0 rounded-full px-3 py-1 text-[10px] font-medium uppercase tracking-[0.12em] ${status.className}`}>{status.label}</span>
       </div>
       <p className="mt-1 truncate text-sm text-[var(--ink-soft)]" title={w.name}>{w.name}</p>
       <p className="mt-5 line-clamp-2 min-h-12 text-sm leading-relaxed text-[var(--ink-soft)]">
-        {w.status === 'error' || w.status === 'blocked' ? w.lastError : w.lastSummary || (w.status === 'pending' ? 'Waiting for the first check' : w.noisy ? 'Changes on every load. Alerts are paused.' : 'No changes yet')}
+        {w.status === 'error' || w.status === 'blocked' ? w.lastError : w.status === 'pending' ? 'Waiting for the first check' : w.noisy ? 'Changes on every load. Alerts are paused.' : w.lastChanged ? `Last changed ${timeAgo(w.lastChanged).toLowerCase()}` : 'No changes yet'}
       </p>
       <div className="mt-auto flex items-center justify-between gap-3 border-t border-black/5 pt-4">
         <div className="min-w-0">

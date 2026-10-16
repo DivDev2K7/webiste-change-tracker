@@ -1,6 +1,8 @@
 import { useRef, useState } from 'react';
 import { Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import Home from './pages/Home.jsx';
+import PublicShare from './pages/PublicShare.jsx';
 import WatchDetails from './pages/WatchDetails.jsx';
 import { useAuth } from './context/AuthContext.jsx';
 
@@ -48,6 +50,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const demoTabRef = useRef(null);
   if (!ready) return null;
+  const sharedPage = location.pathname.startsWith('/share/');
 
   const action = (type) => {
     if (type === 'try-demo') {
@@ -59,8 +62,9 @@ export default function App() {
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[var(--canvas)] text-[var(--on-canvas)]">
+      <Toaster position="bottom-right" theme="dark" toastOptions={{ style: { borderRadius: '16px', borderColor: 'rgba(232,230,223,.12)', background: '#2e3328', color: '#e8e6df' } }} />
       <div className="pointer-events-none fixed inset-0 z-0 opacity-40" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,.45) 1px, transparent 1.5px)', backgroundSize: '97px 113px' }} />
-      {authed && (
+      {authed && !sharedPage && (
         <header className="fixed left-1/2 top-6 z-50 -translate-x-1/2">
           <nav aria-label="Main navigation" className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] p-2 shadow-2xl backdrop-blur-xl">
             <Link to="/" aria-label="Website Change Detector dashboard" className="mr-1 grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white text-[9px] font-semibold tracking-[-0.06em] text-[#2e3328]">WCD</Link>
@@ -90,17 +94,14 @@ export default function App() {
       )}
 
       <main className="relative z-10 mx-auto min-h-screen w-full max-w-[1200px] px-6 pb-32 pt-28 md:px-12 md:pt-32">
-        {authed ? (
-          <div key={location.pathname} className="page-enter">
-            <Routes>
-              <Route path="/" element={<Home demoTabRef={demoTabRef} />} />
-              <Route path="/watch/:id" element={<WatchDetails />} />
-              <Route path="*" element={<p className="pt-20 text-center text-[var(--on-canvas-soft)]">Page not found.</p>} />
-            </Routes>
-          </div>
-        ) : <LoginForm />}
+        <Routes>
+          <Route path="/share/:token" element={<div key={location.pathname} className="page-enter"><PublicShare /></div>} />
+          <Route path="/" element={authed ? <div key={location.pathname} className="page-enter"><Home demoTabRef={demoTabRef} /></div> : <LoginForm />} />
+          <Route path="/watch/:id" element={authed ? <div key={location.pathname} className="page-enter"><WatchDetails /></div> : <LoginForm />} />
+          <Route path="*" element={authed ? <p className="page-enter pt-20 text-center text-[var(--on-canvas-soft)]">Page not found.</p> : <LoginForm />} />
+        </Routes>
       </main>
-      {authed && (
+      {authed && !sharedPage && (
         <>
           <div className="fixed bottom-6 left-6 z-40 flex items-center gap-2 rounded-full bg-black/40 px-3 py-2 text-[10px] uppercase tracking-[0.16em] text-white/75 backdrop-blur-xl">
             <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] shadow-[0_0_10px_var(--accent)]" /> LIVE

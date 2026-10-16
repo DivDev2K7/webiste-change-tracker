@@ -42,6 +42,7 @@ services:
       MONGO_URI: mongodb://mongo:27017/website-change-detector
       CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
       DEMO_URL: ${DEMO_URL:-http://localhost:5000/demo}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       SCREENSHOT_DIR: /data/screenshots
       PUPPETEER_SKIP_DOWNLOAD: "true"
       PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium

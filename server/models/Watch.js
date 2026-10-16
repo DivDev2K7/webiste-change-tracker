@@ -4,6 +4,7 @@ const watchSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true, maxlength: 100 },
     url: { type: String, required: true, trim: true },
+    shareToken: { type: String, default: null },
     // Requirement 1: interval from 15 minutes to 24 hours
     intervalMinutes: { type: Number, required: true, min: 15, max: 1440, default: 60 },
 
@@ -45,5 +46,7 @@ const watchSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+watchSchema.index({ shareToken: 1 }, { unique: true, partialFilterExpression: { shareToken: { $type: 'string' } } });
 
 export default mongoose.model('Watch', watchSchema);
