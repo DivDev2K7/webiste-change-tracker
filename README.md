@@ -125,7 +125,7 @@ Set `OPENAI_API_KEY` to enable best-effort, one-sentence summaries for changed s
 The client can be hosted as a Vercel static site and the Express API as a Render Docker web service, using Atlas for MongoDB:
 
 1. Create an Atlas free cluster, database user, and database. Add the Render service's outbound IP addresses under Atlas **Network Access**. If you must use `0.0.0.0/0`, protect the cluster with a strong unique database password.
-2. In Render, create a **Web Service** from this repository. Select **Docker**, set the root directory to `server`, and choose the **Free** instance. The existing `server/Dockerfile` installs the Puppeteer browser runtime.
+2. In Render, create a **Web Service** from this repository. Select **Docker**, leave the root directory empty, set the Dockerfile path to `server/Dockerfile`, and choose the **Free** instance. The Dockerfile installs the Puppeteer browser runtime.
 3. Set Render environment variables: `MONGO_URI` (Atlas connection string), `AUTH_PASSWORD`, a long random `JWT_SECRET`, `CLIENT_URL` (the Vercel production origin), `DEMO_URL` (the Render service URL plus `/demo`), and optionally `OPENAI_API_KEY`. Render supplies `PORT`.
 4. In Vercel, import this repository and set the root directory to `client`, build command to `npm run build`, and output directory to `dist`. Add `VITE_API_BASE_URL` as the Render origin (no trailing slash) and `VITE_WS_URL` as the Render WebSocket URL ending in `/ws`, for example `wss://your-service.onrender.com/ws`.
 5. Deploy the Vercel site, then set Render's `CLIENT_URL` to its production URL and redeploy the Render service. Check `<Render URL>/api/health`, then sign in to the Vercel site and test a watch, demo, share link, and screenshot comparison.
