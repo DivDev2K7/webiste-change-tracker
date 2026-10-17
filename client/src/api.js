@@ -1,14 +1,16 @@
 import { toast } from 'sonner';
 
 const TOKEN_KEY = 'wcd_token';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
 export const getToken = () => localStorage.getItem(TOKEN_KEY) || '';
 export const setToken = (t) => (t ? localStorage.setItem(TOKEN_KEY, t) : localStorage.removeItem(TOKEN_KEY));
+export const serverAssetUrl = (path) => `${API_BASE_URL}${path}`;
 
 async function request(path, { method = 'GET', body } = {}) {
   const token = getToken();
   let res;
   try {
-    res = await fetch(`/api${path}`, {
+    res = await fetch(`${API_BASE_URL}/api${path}`, {
       method,
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: body ? JSON.stringify(body) : undefined
@@ -52,7 +54,7 @@ export const api = {
 
 // The picker iframe can't send headers, so the token travels in the query string.
 export const previewUrl = (url) =>
-  `/api/watches/preview?url=${encodeURIComponent(url)}${getToken() ? `&token=${getToken()}` : ''}`;
+  `${API_BASE_URL}/api/watches/preview?url=${encodeURIComponent(url)}${getToken() ? `&token=${getToken()}` : ''}`;
 
 export function timeAgo(date) {
   if (!date) return 'Never';

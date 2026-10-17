@@ -36,7 +36,7 @@ Built with **Node.js + Express + MongoDB + Puppeteer** (backend) and **React + V
 | 8 | Per-page version timeline; dashboard with last checked, last changed, status (OK / error / blocked) | `Timeline.jsx`, `Dashboard.jsx`, `WatchDetails.jsx` |
 | Bonus | Keyword-only alerts, one-line change summaries (rule-based, no AI) | `decideAlert` and `summarize` |
 
-Not built (ideas for later): number tracking with charts, AI summaries, browser extension, per-page RSS feed.
+Not built (ideas for later): number tracking with charts, browser extension, per-page RSS feed.
 
 ## Answers to the 4 core questions
 
@@ -119,6 +119,18 @@ For local monitoring of the demo, set `ALLOW_PRIVATE_URLS=true` in the server en
 ## Live summaries and sharing
 
 Set `OPENAI_API_KEY` to enable best-effort, one-sentence summaries for changed snapshots; summary failures do not delay checks. The dashboard uses a WebSocket for live watch updates. Use **Share** on a watch's details page to create a public, read-only `/share/:token` link; anyone with that link can see its recent snapshots and latest comparison.
+
+## Free hosting (Vercel + Render + MongoDB Atlas)
+
+The client can be hosted as a Vercel static site and the Express API as a Render Docker web service, using Atlas for MongoDB:
+
+1. Create an Atlas free cluster, database user, and database. Add the Render service's outbound IP addresses under Atlas **Network Access**. If you must use `0.0.0.0/0`, protect the cluster with a strong unique database password.
+2. In Render, create a **Web Service** from this repository. Select **Docker**, set the root directory to `server`, and choose the **Free** instance. The existing `server/Dockerfile` installs the Puppeteer browser runtime.
+3. Set Render environment variables: `MONGO_URI` (Atlas connection string), `AUTH_PASSWORD`, a long random `JWT_SECRET`, `CLIENT_URL` (the Vercel production origin), `DEMO_URL` (the Render service URL plus `/demo`), and optionally `OPENAI_API_KEY`. Render supplies `PORT`.
+4. In Vercel, import this repository and set the root directory to `client`, build command to `npm run build`, and output directory to `dist`. Add `VITE_API_BASE_URL` as the Render origin (no trailing slash) and `VITE_WS_URL` as the Render WebSocket URL ending in `/ws`, for example `wss://your-service.onrender.com/ws`.
+5. Deploy the Vercel site, then set Render's `CLIENT_URL` to its production URL and redeploy the Render service. Check `<Render URL>/api/health`, then sign in to the Vercel site and test a watch, demo, share link, and screenshot comparison.
+
+The free Render service can spin down while idle, so its scheduler cannot reliably run background checks while asleep and its first request after sleeping may be slow. Its local filesystem is ephemeral, so screenshots can disappear after restarts/redeploys; the demo's in-memory edits are also reset. Treat this setup as a hobby/demo deployment rather than reliable production monitoring.
 
 ## API
 

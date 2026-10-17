@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { api, intervalLabel, timeAgo } from '../api';
+import { api, intervalLabel, serverAssetUrl, timeAgo } from '../api';
 import DiffViewer from '../components/DiffViewer.jsx';
 import ScreenshotSlider from '../components/ScreenshotSlider.jsx';
 import Timeline from '../components/Timeline.jsx';
@@ -46,7 +46,7 @@ export default function PublicShare() {
       {latest && before && (
         <section className="card space-y-6 p-6 md:p-8">
           <div><p className="section-label">Latest comparison</p><h2 className="mt-2 text-2xl font-medium tracking-[-0.03em]">What changed</h2></div>
-          {before.screenshot && latest.screenshot && <ScreenshotSlider beforeUrl={`/screenshots/${before.screenshot}`} afterUrl={`/screenshots/${latest.screenshot}`} />}
+          {before.screenshot && latest.screenshot && <ScreenshotSlider beforeUrl={serverAssetUrl(`/screenshots/${before.screenshot}`)} afterUrl={serverAssetUrl(`/screenshots/${latest.screenshot}`)} />}
           <DiffViewer watchId={String(watch._id)} from={String(before._id)} to={String(latest._id)} publicToken={token} showSlider={false} />
         </section>
       )}

@@ -1,7 +1,7 @@
 // Requirement 6: text diff, highlighted screenshot diff, and side-by-side comparison of any two versions.
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { api } from '../api';
+import { api, serverAssetUrl } from '../api';
 import ScreenshotSlider from './ScreenshotSlider.jsx';
 
 const TINT = {
@@ -61,7 +61,7 @@ function Column({ title, parts, hide }) {
 
 function Shot({ s }) {
   return s.screenshot ? (
-    <img src={s.screenshot} alt="Page screenshot" className="w-full rounded-xl shadow-card" />
+    <img src={serverAssetUrl(s.screenshot)} alt="Page screenshot" className="w-full rounded-xl shadow-card" />
   ) : (
     <p className="text-sm text-muted">No screenshot saved.</p>
   );
@@ -89,7 +89,7 @@ function ShotDiff({ data }) {
       <p className="text-sm text-muted">
         <span className="font-semibold text-ink">{data.screenshotDiff.percent}%</span> of the page changed. Changes are marked in red.
       </p>
-      <img src={data.screenshotDiff.url} alt="Highlighted screenshot differences" className="w-full rounded-xl shadow-card" />
+      <img src={serverAssetUrl(data.screenshotDiff.url)} alt="Highlighted screenshot differences" className="w-full rounded-xl shadow-card" />
     </div>
   );
 }
@@ -138,7 +138,7 @@ export default function DiffViewer({ watchId, from, to, publicToken, onData, sho
       </div>
       {tab === 'text' && <TextDiff parts={data.parts} />}
       {tab === 'side' && <SideBySide data={data} />}
-      {showSlider && tab === 'slider' && hasScreenshots && <ScreenshotSlider beforeUrl={data.from.screenshot} afterUrl={data.to.screenshot} />}
+      {showSlider && tab === 'slider' && hasScreenshots && <ScreenshotSlider beforeUrl={serverAssetUrl(data.from.screenshot)} afterUrl={serverAssetUrl(data.to.screenshot)} />}
       {tab === 'shot' && <ShotDiff data={data} />}
     </div>
   );

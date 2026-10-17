@@ -44,7 +44,7 @@ async function main() {
   const server = http.createServer(app);
   const wss = new WebSocketServer({ server, path: '/ws' });
   wss.on('connection', registerClient);
-  server.listen(PORT, () => console.log(`[server] http://localhost:${PORT}`));
+  server.listen(PORT, '0.0.0.0', () => console.log(`[server] listening on port ${PORT}`));
 
   const shutdown = async () => {
     wss.close();

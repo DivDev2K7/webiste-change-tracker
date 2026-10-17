@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Share2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { api, INTERVALS, intervalLabel, timeAgo } from '../api';
+import { api, INTERVALS, intervalLabel, serverAssetUrl, timeAgo } from '../api';
 import { StatusLabel } from '../components/Dashboard.jsx';
 import Timeline from '../components/Timeline.jsx';
 import DiffViewer from '../components/DiffViewer.jsx';
@@ -253,7 +253,7 @@ export default function WatchDetails() {
         {diffData?.from?.screenshot && diffData?.to?.screenshot && (
           <section className="space-y-3">
             <p className="section-label">Before / after</p>
-            <ScreenshotSlider beforeUrl={diffData.from.screenshot} afterUrl={diffData.to.screenshot} />
+            <ScreenshotSlider beforeUrl={serverAssetUrl(diffData.from.screenshot)} afterUrl={serverAssetUrl(diffData.to.screenshot)} />
           </section>
         )}
         <div className="grid gap-9 lg:grid-cols-[minmax(0,1fr)_21rem]">

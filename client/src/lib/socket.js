@@ -2,10 +2,23 @@ const subscribers = new Map();
 let socket;
 let reconnectTimer;
 
+function socketUrl() {
+  const configuredUrl = import.meta.env.VITE_WS_URL;
+  if (configuredUrl) return configuredUrl;
+
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+  if (apiBaseUrl) {
+    const backend = new URL(apiBaseUrl);
+    return `${backend.protocol === 'https:' ? 'wss:' : 'ws:'}//${backend.host}/ws`;
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/ws`;
+}
+
 function connect() {
   if (socket || subscribers.size === 0) return;
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const activeSocket = new WebSocket(`${protocol}//${window.location.host}/ws`);
+  const activeSocket = new WebSocket(socketUrl());
   socket = activeSocket;
 
   activeSocket.addEventListener('message', (message) => {
